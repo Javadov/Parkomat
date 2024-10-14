@@ -11,7 +11,6 @@ class DatabaseHelper {
   }
 
   DatabaseHelper._internal() {
-    // Ange sökvägen till databasen
     final dbPath = _getDatabasePath('parkomat.db');
     db = sqlite3.open(dbPath);
     _createTables();
@@ -23,7 +22,6 @@ class DatabaseHelper {
   }
 
   void _createTables() {
-    // Skapa tabeller om de inte redan finns
     db.execute('''
       CREATE TABLE IF NOT EXISTS persons (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -43,7 +41,7 @@ class DatabaseHelper {
     ''');
 
     db.execute('''
-      CREATE TABLE IF NOT EXISTS parking_areas (
+      CREATE TABLE IF NOT EXISTS parking_spaces (
         id TEXT PRIMARY KEY,
         address TEXT NOT NULL,
         price_per_hour REAL NOT NULL
@@ -54,11 +52,11 @@ class DatabaseHelper {
       CREATE TABLE IF NOT EXISTS parkings (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         vehicle_id INTEGER NOT NULL,
-        parking_areas_id TEXT NOT NULL,
+        parking_space_id TEXT NOT NULL,
         start_time TEXT NOT NULL,
         end_time TEXT,
         FOREIGN KEY(vehicle_id) REFERENCES vehicles(id),
-        FOREIGN KEY(parking_areas_id) REFERENCES parking_areas(id)
+        FOREIGN KEY(parking_space_id) REFERENCES parking_spaces(id)
       );
     ''');
   }

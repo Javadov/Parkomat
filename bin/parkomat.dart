@@ -1,30 +1,35 @@
 import 'dart:io';
 import 'package:parkomat/models/person.dart';
 import 'package:parkomat/models/vehicle.dart';
-import 'package:parkomat/models/parking_area.dart';
+import 'package:parkomat/models/parking_space.dart';
 import 'package:parkomat/models/parking.dart';
 import 'package:parkomat/repositories/person_repository.dart';
 import 'package:parkomat/repositories/vehicle_repository.dart';
-import 'package:parkomat/repositories/parking_area_repository.dart';
+import 'package:parkomat/repositories/parking_space_repository.dart';
 import 'package:parkomat/repositories/parking_repository.dart';
 
 void main() {
+  final personRepo = PersonRepository();
+  final vehicleRepo = VehicleRepository();
+  final spaceRepo = ParkingSpaceRepository();
+  final parkingRepo = ParkingRepository();
+
   while (true) {
     printMainMenu();
     String? choice = stdin.readLineSync();
 
     switch (choice) {
       case '1':
-        handlePersons();
+        handlePersons(personRepo);
         break;
       case '2':
-        handleVehicles();
+        handleVehicles(vehicleRepo, personRepo);
         break;
       case '3':
-        handleParkingAreas();
+        handleParkingSpaces(spaceRepo);
         break;
       case '4':
-        handleParkings();
+        handleParkings(parkingRepo, vehicleRepo, spaceRepo);
         break;
       case '5':
         print('Avslutar programmet. Hej då!');
@@ -48,9 +53,7 @@ void printMainMenu() {
 }
 
 // Hantera Personer
-void handlePersons() {
-  PersonRepository personRepo = PersonRepository();
-
+void handlePersons(PersonRepository repo) {
   while (true) {
     print('\nDu har valt att hantera Personer. Vad vill du göra?');
     print('1. Skapa ny person');
@@ -64,16 +67,16 @@ void handlePersons() {
 
     switch (choice) {
       case '1':
-        createPerson(personRepo);
+        createPerson(repo);
         break;
       case '2':
-        listPersons(personRepo);
+        listPersons(repo);
         break;
       case '3':
-        updatePerson(personRepo);
+        updatePerson(repo);
         break;
       case '4':
-        deletePerson(personRepo);
+        deletePerson(repo);
         break;
       case '5':
         return;
@@ -91,7 +94,14 @@ void createPerson(PersonRepository repo) {
   stdout.write('Ange personnummer: ');
   String? personalNumber = stdin.readLineSync();
 
-  if (name != null && personalNumber != null) {
+  if (name != null && personalNumber != null && name.isNotEmpty && personalNumber.isNotEmpty) {
+    // Kontrollera om personnumret redan finns
+    Person? existing = repo.getByPersonalNumber(personalNumber);
+    if (existing != null) {
+      print('En person med detta personnummer finns redan.');
+      return;
+    }
+
     Person person = Person(name: name, personalNumber: personalNumber);
     repo.add(person);
     print('Person tillagd: $person');
@@ -118,7 +128,7 @@ void updatePerson(PersonRepository repo) {
   stdout.write('Ange personnummer för personen du vill uppdatera: ');
   String? personalNumber = stdin.readLineSync();
 
-  if (personalNumber != null) {
+  if (personalNumber != null && personalNumber.isNotEmpty) {
     Person? person = repo.getByPersonalNumber(personalNumber);
     if (person != null) {
       stdout.write('Ange nytt namn (nuvarande: ${person.name}): ');
@@ -144,7 +154,7 @@ void deletePerson(PersonRepository repo) {
   stdout.write('Ange personnummer för personen du vill ta bort: ');
   String? personalNumber = stdin.readLineSync();
 
-  if (personalNumber != null) {
+  if (personalNumber != null && personalNumber.isNotEmpty) {
     Person? person = repo.getByPersonalNumber(personalNumber);
     if (person != null) {
       repo.delete(personalNumber);
@@ -158,10 +168,7 @@ void deletePerson(PersonRepository repo) {
 }
 
 // Hantera Fordon
-void handleVehicles() {
-  VehicleRepository vehicleRepo = VehicleRepository();
-  PersonRepository personRepo = PersonRepository();
-
+void handleVehicles(VehicleRepository repo, PersonRepository personRepo) {
   while (true) {
     print('\nDu har valt att hantera Fordon. Vad vill du göra?');
     print('1. Skapa nytt fordon');
@@ -175,16 +182,16 @@ void handleVehicles() {
 
     switch (choice) {
       case '1':
-        createVehicle(vehicleRepo, personRepo);
+        createVehicle(repo, personRepo);
         break;
       case '2':
-        listVehicles(vehicleRepo);
+        listVehicles(repo);
         break;
       case '3':
-        updateVehicle(vehicleRepo, personRepo);
+        updateVehicle(repo, personRepo);
         break;
       case '4':
-        deleteVehicle(vehicleRepo);
+        deleteVehicle(repo);
         break;
       case '5':
         return;
@@ -231,7 +238,16 @@ void createVehicle(VehicleRepository repo, PersonRepository personRepo) {
 
   if (registrationNumber != null &&
       ownerPersonalNumber != null &&
+      registrationNumber.isNotEmpty &&
+      ownerPersonalNumber.isNotEmpty &&
       type != null) {
+    // Kontrollera om fordonet redan finns
+    Vehicle? existingVehicle = repo.getByRegistrationNumber(registrationNumber);
+    if (existingVehicle != null) {
+      print('Ett fordon med detta registreringsnummer finns redan.');
+      return;
+    }
+
     Person? owner = personRepo.getByPersonalNumber(ownerPersonalNumber);
     if (owner != null) {
       Vehicle vehicle = Vehicle(
@@ -267,7 +283,7 @@ void updateVehicle(VehicleRepository repo, PersonRepository personRepo) {
   stdout.write('Ange registreringsnummer för fordonet du vill uppdatera: ');
   String? registrationNumber = stdin.readLineSync();
 
-  if (registrationNumber != null) {
+  if (registrationNumber != null && registrationNumber.isNotEmpty) {
     Vehicle? vehicle = repo.getByRegistrationNumber(registrationNumber);
     if (vehicle != null) {
       stdout.write('Ange nytt registreringsnummer (nuvarande: ${vehicle.registrationNumber}): ');
@@ -304,7 +320,7 @@ void updateVehicle(VehicleRepository repo, PersonRepository personRepo) {
       String? newOwnerPersonalNumber = stdin.readLineSync();
 
       Person? newOwner;
-      if (newOwnerPersonalNumber != null) {
+      if (newOwnerPersonalNumber != null && newOwnerPersonalNumber.isNotEmpty) {
         newOwner = personRepo.getByPersonalNumber(newOwnerPersonalNumber);
         if (newOwner == null) {
           print('Ny ägare inte hittad. Ägarens ändring avbryts.');
@@ -314,10 +330,19 @@ void updateVehicle(VehicleRepository repo, PersonRepository personRepo) {
         newOwner = vehicle.owner;
       }
 
+      // Kontrollera om nytt registreringsnummer redan finns (om det ändras)
+      if (newRegNumber != null && newRegNumber.isNotEmpty && newRegNumber != vehicle.registrationNumber) {
+        Vehicle? existingVehicle = repo.getByRegistrationNumber(newRegNumber);
+        if (existingVehicle != null) {
+          print('Ett fordon med detta nya registreringsnummer finns redan.');
+          return;
+        }
+      }
+
       // Uppdatera fordonet
-      vehicle.registrationNumber = newRegNumber ?? vehicle.registrationNumber;
-      vehicle.type = newType;
-      vehicle.owner = newOwner;
+      vehicle.registrationNumber = newRegNumber != null && newRegNumber.isNotEmpty ? newRegNumber : vehicle.registrationNumber;
+      vehicle.type = newType!;
+      vehicle.owner = newOwner!;
 
       repo.update(vehicle);
       print('Fordon uppdaterat: $vehicle');
@@ -334,7 +359,7 @@ void deleteVehicle(VehicleRepository repo) {
   stdout.write('Ange registreringsnummer för fordonet du vill ta bort: ');
   String? registrationNumber = stdin.readLineSync();
 
-  if (registrationNumber != null) {
+  if (registrationNumber != null && registrationNumber.isNotEmpty) {
     Vehicle? vehicle = repo.getByRegistrationNumber(registrationNumber);
     if (vehicle != null) {
       repo.delete(registrationNumber);
@@ -348,9 +373,7 @@ void deleteVehicle(VehicleRepository repo) {
 }
 
 // Hantera Parkeringsplatser
-void handleParkingAreas() {
-  ParkingAreaRepository areaRepo = ParkingAreaRepository();
-
+void handleParkingSpaces(ParkingSpaceRepository repo) {
   while (true) {
     print('\nDu har valt att hantera Parkeringsplatser. Vad vill du göra?');
     print('1. Skapa ny parkeringsplats');
@@ -364,16 +387,16 @@ void handleParkingAreas() {
 
     switch (choice) {
       case '1':
-        createParkingArea(areaRepo);
+        createParkingSpace(repo);
         break;
       case '2':
-        listParkingAreas(areaRepo);
+        listParkingSpaces(repo);
         break;
       case '3':
-        updateParkingArea(areaRepo);
+        updateParkingSpace(repo);
         break;
       case '4':
-        deleteParkingArea(areaRepo);
+        deleteParkingSpace(repo);
         break;
       case '5':
         return;
@@ -384,7 +407,7 @@ void handleParkingAreas() {
 }
 
 // Skapa ny Parkeringsplats
-void createParkingArea(ParkingAreaRepository repo) {
+void createParkingSpace(ParkingSpaceRepository repo) {
   stdout.write('Ange ID för parkeringsplatsen: ');
   String? id = stdin.readLineSync();
 
@@ -395,57 +418,64 @@ void createParkingArea(ParkingAreaRepository repo) {
   String? priceInput = stdin.readLineSync();
   double? pricePerHour = double.tryParse(priceInput ?? '');
 
-  if (id != null && address != null && pricePerHour != null) {
-    ParkingArea area = ParkingArea(
+  if (id != null && id.isNotEmpty && address != null && address.isNotEmpty && pricePerHour != null) {
+    // Kontrollera om parkeringsplatsen redan finns
+    ParkingSpace? existingSpace = repo.getById(id);
+    if (existingSpace != null) {
+      print('En parkeringsplats med detta ID finns redan.');
+      return;
+    }
+
+    ParkingSpace space = ParkingSpace(
       id: id,
       address: address,
       pricePerHour: pricePerHour,
     );
-    repo.add(area);
-    print('Parkeringsplats tillagd: $area');
+    repo.add(space);
+    print('Parkeringsplats tillagd: $space');
   } else {
     print('Ogiltig inmatning. Försök igen.');
   }
 }
 
 // Visa alla Parkeringsplatser
-void listParkingAreas(ParkingAreaRepository repo) {
-  List<ParkingArea> areas = repo.getAll();
-  if (areas.isEmpty) {
+void listParkingSpaces(ParkingSpaceRepository repo) {
+  List<ParkingSpace> spaces = repo.getAll();
+  if (spaces.isEmpty) {
     print('Inga parkeringsplatser registrerade.');
   } else {
     print('\nRegistrerade Parkeringsplatser:');
-    for (var area in areas) {
-      print(area);
+    for (var space in spaces) {
+      print(space);
     }
   }
 }
 
 // Uppdatera Parkeringsplats
-void updateParkingArea(ParkingAreaRepository repo) {
+void updateParkingSpace(ParkingSpaceRepository repo) {
   stdout.write('Ange ID för parkeringsplatsen du vill uppdatera: ');
   String? id = stdin.readLineSync();
 
-  if (id != null) {
-    ParkingArea? area = repo.getById(id);
-    if (area != null) {
-      stdout.write('Ange ny adress (nuvarande: ${area.address}): ');
+  if (id != null && id.isNotEmpty) {
+    ParkingSpace? space = repo.getById(id);
+    if (space != null) {
+      stdout.write('Ange ny adress (nuvarande: ${space.address}): ');
       String? newAddress = stdin.readLineSync();
 
-      stdout.write('Ange nytt pris per timme (nuvarande: \$${area.pricePerHour.toStringAsFixed(2)}): ');
+      stdout.write('Ange nytt pris per timme (nuvarande: \$${space.pricePerHour.toStringAsFixed(2)}): ');
       String? newPriceInput = stdin.readLineSync();
       double? newPrice = double.tryParse(newPriceInput ?? '');
 
       if (newAddress != null && newAddress.isNotEmpty) {
-        area.address = newAddress;
+        space.address = newAddress;
       }
 
       if (newPrice != null) {
-        area.pricePerHour = newPrice;
+        space.pricePerHour = newPrice;
       }
 
-      repo.update(area);
-      print('Parkeringsplats uppdaterad: $area');
+      repo.update(space);
+      print('Parkeringsplats uppdaterad: $space');
     } else {
       print('Parkeringsplats inte hittad.');
     }
@@ -455,15 +485,15 @@ void updateParkingArea(ParkingAreaRepository repo) {
 }
 
 // Ta bort Parkeringsplats
-void deleteParkingArea(ParkingAreaRepository repo) {
+void deleteParkingSpace(ParkingSpaceRepository repo) {
   stdout.write('Ange ID för parkeringsplatsen du vill ta bort: ');
   String? id = stdin.readLineSync();
 
-  if (id != null) {
-    ParkingArea? area = repo.getById(id);
-    if (area != null) {
+  if (id != null && id.isNotEmpty) {
+    ParkingSpace? space = repo.getById(id);
+    if (space != null) {
       repo.delete(id);
-      print('Parkeringsplats borttagen: $area');
+      print('Parkeringsplats borttagen: $space');
     } else {
       print('Parkeringsplats inte hittad.');
     }
@@ -473,11 +503,7 @@ void deleteParkingArea(ParkingAreaRepository repo) {
 }
 
 // Hantera Parkeringar
-void handleParkings() {
-  ParkingRepository parkingRepo = ParkingRepository();
-  VehicleRepository vehicleRepo = VehicleRepository();
-  ParkingAreaRepository areaRepo = ParkingAreaRepository();
-
+void handleParkings(ParkingRepository repo, VehicleRepository vehicleRepo, ParkingSpaceRepository spaceRepo) {
   while (true) {
     print('\nDu har valt att hantera Parkeringar. Vad vill du göra?');
     print('1. Skapa ny parkering');
@@ -491,16 +517,16 @@ void handleParkings() {
 
     switch (choice) {
       case '1':
-        createParking(parkingRepo, vehicleRepo, areaRepo);
+        createParking(repo, vehicleRepo, spaceRepo);
         break;
       case '2':
-        listParkings(parkingRepo);
+        listParkings(repo);
         break;
       case '3':
-        updateParking(parkingRepo);
+        updateParking(repo);
         break;
       case '4':
-        deleteParking(parkingRepo);
+        deleteParking(repo);
         break;
       case '5':
         return;
@@ -511,22 +537,22 @@ void handleParkings() {
 }
 
 // Skapa ny Parkering
-void createParking(ParkingRepository repo, VehicleRepository vehicleRepo, ParkingAreaRepository areaRepo) {
+void createParking(ParkingRepository repo, VehicleRepository vehicleRepo, ParkingSpaceRepository spaceRepo) {
   stdout.write('Ange registreringsnummer för fordonet: ');
   String? registrationNumber = stdin.readLineSync();
 
   stdout.write('Ange ID för parkeringsplatsen: ');
-  String? areaId = stdin.readLineSync();
+  String? spaceId = stdin.readLineSync();
 
-  if (registrationNumber != null && areaId != null) {
+  if (registrationNumber != null && registrationNumber.isNotEmpty && spaceId != null && spaceId.isNotEmpty) {
     Vehicle? vehicle = vehicleRepo.getByRegistrationNumber(registrationNumber);
-    ParkingArea? area = areaRepo.getById(areaId);
+    ParkingSpace? space = spaceRepo.getById(spaceId);
 
-    if (vehicle != null && area != null) {
+    if (vehicle != null && space != null) {
       DateTime startTime = DateTime.now();
       Parking parking = Parking(
         vehicle: vehicle,
-        parkingArea: area,
+        parkingSpace: space,
         startTime: startTime,
       );
       repo.add(parking);

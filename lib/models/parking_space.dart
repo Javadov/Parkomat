@@ -1,9 +1,9 @@
-class ParkingArea {
+class ParkingSpace {
   String id;
   String address;
   double pricePerHour;
 
-  ParkingArea({
+  ParkingSpace({
     required this.id,
     required this.address,
     required this.pricePerHour,
