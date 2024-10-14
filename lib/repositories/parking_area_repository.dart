@@ -12,16 +12,16 @@ class ParkingAreaRepository {
 
   ParkingAreaRepository._internal() : db = DatabaseHelper().db;
 
-  void add(ParkingArea space) {
+  void add(ParkingArea area) {
     final stmt = db.prepare(
-      'INSERT INTO parking_spaces (id, address, price_per_hour) VALUES (?, ?, ?);'
+      'INSERT INTO parking_areas (id, address, price_per_hour) VALUES (?, ?, ?);'
     );
-    stmt.execute([space.id, space.address, space.pricePerHour]);
+    stmt.execute([area.id, area.address, area.pricePerHour]);
     stmt.dispose();
   }
 
   List<ParkingArea> getAll() {
-    final ResultSet result = db.select('SELECT * FROM parking_spaces;');
+    final ResultSet result = db.select('SELECT * FROM parking_areas;');
     return result.map((row) {
       return ParkingArea(
         id: row['id'] as String,
@@ -33,7 +33,7 @@ class ParkingAreaRepository {
 
   ParkingArea? getById(String id) {
     final stmt = db.prepare(
-      'SELECT * FROM parking_spaces WHERE id = ?;'
+      'SELECT * FROM parking_areas WHERE id = ?;'
     );
     final ResultSet result = stmt.select([id]);
     stmt.dispose();
@@ -50,21 +50,21 @@ class ParkingAreaRepository {
     }
   }
 
-  void update(ParkingArea updatedSpace) {
+  void update(ParkingArea updatedArea) {
     final stmt = db.prepare(
-      'UPDATE parking_spaces SET address = ?, price_per_hour = ? WHERE id = ?;'
+      'UPDATE parking_areas SET address = ?, price_per_hour = ? WHERE id = ?;'
     );
     stmt.execute([
-      updatedSpace.address,
-      updatedSpace.pricePerHour,
-      updatedSpace.id
+      updatedArea.address,
+      updatedArea.pricePerHour,
+      updatedArea.id
     ]);
     stmt.dispose();
   }
 
   void delete(String id) {
     final stmt = db.prepare(
-      'DELETE FROM parking_spaces WHERE id = ?;'
+      'DELETE FROM parking_areas WHERE id = ?;'
     );
     stmt.execute([id]);
     stmt.dispose();

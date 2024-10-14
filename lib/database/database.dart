@@ -54,11 +54,11 @@ class DatabaseHelper {
       CREATE TABLE IF NOT EXISTS parkings (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         vehicle_id INTEGER NOT NULL,
-        parking_space_id TEXT NOT NULL,
+        parking_areas_id TEXT NOT NULL,
         start_time TEXT NOT NULL,
         end_time TEXT,
         FOREIGN KEY(vehicle_id) REFERENCES vehicles(id),
-        FOREIGN KEY(parking_space_id) REFERENCES parking_spaces(id)
+        FOREIGN KEY(parking_areas_id) REFERENCES parking_areas(id)
       );
     ''');
   }
